@@ -1,0 +1,30 @@
+{
+  "name": "terra-coding-interview",
+  "version": "0.0.1",
+  "description": "MBTA Subway Route Finder",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "build": "babel src -d lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/sguthrie/terra-coding-interview.git"
+  },
+  "author": "Sarah Guthrie <sallyeguthrie@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/sguthrie/terra-coding-interview/issues"
+  },
+  "homepage": "https://gitlab.com/sguthrie/terra-coding-interview#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "mocha": "^6.2.0"
+  },
+  "dependencies": {
+    "esm": "^3.2.25",
+    "node-fetch": "^2.6.0",
+    "yargs": "^13.3.0"
+  }
+}
