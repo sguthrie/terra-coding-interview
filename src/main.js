@@ -3,24 +3,36 @@ const fetch = require('node-fetch');
 // Add yargs to simplify CLI development
 const args = require('yargs')
   .command({
-    command: 'basic <apiKey> <startStop> <endStop>',
+    command: '<startStop> <endStop> [<apiKey>]',
     desc: 'Find route between 2 stops on the MBTA Subway'
   })
   .help()
   .argv;
 
-const apiKey = args._[0];
-const startStop = args._[1];
-const endStop = args._[2];
+const startStop = args._[0];
+const endStop = args._[1];
+const apiKey = args._[2];
 
-const url = 'https://api-v3.mbta.com';
-const request = {
-  method: 'GET',
-  headers: {
-    "Content-type":"application/vnd.api+json",
-    "apikey": apiKey
+let request;
+if (apiKey){
+  request = {
+    method: 'GET',
+    headers: {
+      "Content-type":"application/vnd.api+json",
+      "apikey": apiKey
+    }
+  }
+} else {
+  console.log("Warning: you did not provide an API Token. Queries might fail");
+  request = {
+    method: 'GET',
+    headers: {
+      "Content-type":"application/vnd.api+json"
+    }
   }
 }
+const url = 'https://api-v3.mbta.com';
+
 // Basic query to MBTA endpoint with specified endpoint
 // returns Promise for MBTA API Query
 const mbtaQuery = async (endpoint, request) => {
