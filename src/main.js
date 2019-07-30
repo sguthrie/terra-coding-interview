@@ -57,7 +57,7 @@ function findPath(startPoints, endPoints, adj){
   }
   // Check if the start and end points are on the same route
   let sameRoute = intersect(startPoints, endPoints);
-  for (routeName of sameRoute.values()){
+  for (let routeName of sameRoute.values()){
     return [routeName];
   }
   // build an array for each start route and choose the shortest one to return
