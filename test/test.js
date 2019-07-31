@@ -12,7 +12,7 @@ Graph:
 const adj = {
   'A': new Set(['B','D']),
   'B': new Set(['A','C','D']),
-  'C': new Set(['C']),
+  'C': new Set(['B']),
   'D': new Set(['A','B'])
 };
 
@@ -37,6 +37,15 @@ describe('Terra Coding Interview', function() {
       assert(o,{'foo': new Set(['bar', 'baz'])});
     });
   });
+  describe('removeLine', function() {
+    it('returns a new adjacency matrix with a vertex deleted', function (){
+      assert(Main.removeLine('B', adj), {
+        'A': new Set(['D']),
+        'C': new Set(['C']),
+        'D': new Set(['A'])
+      });
+    });
+  });
   describe('findPath', function() {
     it('returns an array of one route if starting and ending on the same route', function () {
       assert(Main.findPath(['A'], ['B','A'], adj), ['A']);
@@ -52,6 +61,24 @@ describe('Terra Coding Interview', function() {
     })
     it ('returns an array of the shortest routes if there are multiple ending routes', function () {
       assert(Main.findPath(['C'], ['D','B'], adj), ['C','B']);
+    });
+    it ('raises an error if there are no starting routes', function () {
+      assert.throws(Main.findPath, Error, [[], ['B'], adj]);
+    });
+    it ('raises an error if there are no ending routes', function () {
+      assert.throws(Main.findPath, Error, [['D'], [], adj]);
+    });
+    it ('raises an error if the starting point is only on a downed line', function (){
+      let newAdj = Main.removeLine('B',adj);
+      assert.throws(Main.findPath, Error, [['B'],['C'], adj]);
+    });
+    it ('raises an error if there are no possible paths', function (){
+      let newAdj = Main.removeLine('B',adj);
+      assert.throws(Main.findPath, Error, [['A'],['C'], adj]);
+    });
+    it ('handles missing routes if possible', function (){
+      let newAdj = Main.removeLine('A',adj);
+      assert(Main.findPath(['D'],['C'], adj), ['D','B','C']);
     })
   });
 });

@@ -3,15 +3,26 @@ const fetch = require('node-fetch');
 // Add yargs to simplify CLI development
 const args = require('yargs')
   .command({
-    command: '<startStop> <endStop> [<apiKey>]',
-    desc: 'Find route between 2 stops on the MBTA Subway'
+    command: '-d [<lineName>] <startStop> <endStop> [<apiKey>]',
+    desc: 'Find route between 2 stops on the MBTA Subway. May specify a line that is non-passable using the -d flag.'
   })
+//  .demandCommand(2)
   .help()
   .argv;
 
 const startStop = args._[0];
 const endStop = args._[1];
 const apiKey = args._[2];
+let downLines;
+if (args.d){
+  if (typeof args.d === 'string') {
+    downLines = [args.d];
+  } else {
+    downLines = Array.from(args.d);
+  }
+} else {
+  downLines = [];
+}
 
 let request;
 if (apiKey){
@@ -60,12 +71,12 @@ function findPath(startPoints, endPoints, adj){
   // ensure both start and end points exist (we found that stop on at
   // least one route)
   if (startPoints.length < 1){
-    console.log(`Cannot find start point on the Subway routes`);
-    throw new Error(`Cannot find start point on the Subway routes`);
+    console.log(`Start point is only on downed Subway routes`);
+    throw new Error(`Start point is only on downed Subway routes`);
   }
   if (endPoints.length < 1){
-    console.log(`Cannot find end point on the Subway routes`);
-    throw new Error(`Cannot find end point on the Subway routes`);
+    console.log(`End point is only on downed Subway routes`);
+    throw new Error(`End point is only on downed Subway routes`);
   }
   // Check if the start and end points are on the same route
   let sameRoute = intersect(startPoints, endPoints);
@@ -74,6 +85,7 @@ function findPath(startPoints, endPoints, adj){
   }
   // build an array for each start route and choose the shortest one to return
   let paths = [];
+  let foundRoute = false;
   for (let p of startPoints){
     paths.push([p])
     // Run BFS - as soon as we hit a route in endPoints, we know it has the
@@ -89,6 +101,7 @@ function findPath(startPoints, endPoints, adj){
       if (endPoints.includes(edge)){
         // found a route in endPoints!
         paths[paths.length-1].push(edge);
+        foundRoute = true;
         break;
       }
       for (let nextEdge of adj[edge]){
@@ -98,6 +111,10 @@ function findPath(startPoints, endPoints, adj){
       }
     }
   }
+  if (!foundRoute){
+    console.log(`No route exists - requires downed Subway routes`);
+    throw new Error(`No route exist - requires downed Subway routes`);
+  }
   // find path with the fewest transfers
   let minPathIndex = 0;
   for (let i=1; i<paths.length;i++){
@@ -106,6 +123,23 @@ function findPath(startPoints, endPoints, adj){
     }
   }
   return paths[minPathIndex];
+}
+
+// Part 4 - remove a line
+function removeLine(lineName, adj) {
+  // Assume line is in graph
+  const newAdj = {};
+  for (let entry of Object.entries(adj)){
+    if (lineName !== entry[0]){
+      newAdj[entry[0]] = [];
+      for (let e of entry[1]){
+        if (lineName !== e){
+          newAdj[entry[0]].push(e);
+        }
+      }
+    }
+  }
+  return newAdj;
 }
 
 function addToObjectMap(map, key, value){
@@ -184,9 +218,9 @@ if (startStop && endStop){
       // Question 2: find stops where more than one route stops
       // Don't bother redoing work - only look at the routes we haven't looked over
       // yet.
+      let currRouteName = routesWithStops[i].name;
       for (let j=i+1; j<routesWithStops.length; j++){
         let sharedStops = intersect(routesWithStops[i].stops, routesWithStops[j].stops);
-        let currRouteName = routesWithStops[i].name;
         let otherRouteName = routesWithStops[j].name
         // Add edge i,j to graph
         addToObjectMap(lineAdjMatrix, currRouteName, otherRouteName);
@@ -200,12 +234,14 @@ if (startStop && endStop){
           addToObjectMap(hubStops, stop, otherRouteName)
         }
       }
-      // Question 3: if these routes contain startStop or endStop, add to list
-      if (routesWithStops[i].stops.includes(startStop)){
-        startRoute.push(routesWithStops[i].name);
-      }
-      if (routesWithStops[i].stops.includes(endStop)){
-        endRoute.push(routesWithStops[i].name);
+      if (!downLines.includes(currRouteName)){
+        // Question 3: if these routes contain startStop or endStop, add to list
+        if (routesWithStops[i].stops.includes(startStop)){
+          startRoute.push(currRouteName);
+        }
+        if (routesWithStops[i].stops.includes(endStop)){
+          endRoute.push(currRouteName);
+        }
       }
     }
     // print max and min stops to console
@@ -217,7 +253,11 @@ if (startStop && endStop){
     for (let stop of Object.entries(hubStops)){
       console.log(`  ${stop[0]}: ${Array.from(stop[1])}`);
     }
-    let path = findPath(startRoute, endRoute, lineAdjMatrix);
+    let actualLineAdj = lineAdjMatrix;
+    for (let line of downLines){
+      actualLineAdj = removeLine(line, actualLineAdj);
+    }
+    let path = findPath(startRoute, endRoute, actualLineAdj);
     let printStr = `${startStop} -> `;
     for (let route of path){
       printStr += `${route} -> `;
@@ -228,4 +268,4 @@ if (startStop && endStop){
   })
 }
 
-export {intersect,findPath,addToObjectMap};
+export {intersect,removeLine,findPath,addToObjectMap};
